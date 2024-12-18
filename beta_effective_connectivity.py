@@ -86,12 +86,14 @@ nodes_pc = np.vstack([nodes,np.zeros(N)]).T
 
 
 
-for i in range(2):
+for i in range(10):
     for j in range(N):
         w = net[i,j]
         if np.abs(w) > 0.2:
             print('w',w)
             drawEdgePC(pl,nodes_pc,j,i,w)
+    print('inedges_node_{:03n}'.format(i) +'.glb')
+    pl.export_gltf('inedges_node_{:03n}'.format(i) +'.glb',inline_data=True)
 
 pl.show()
 
