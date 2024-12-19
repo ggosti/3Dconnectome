@@ -13,7 +13,7 @@ def drawEdgePC(pl,nodes_pc,u,v,w):
         print('p1',p1)
         dis = np.sqrt( np.sum((p0-p1)**2) )
         #print(dis)
-        t = np.arange(0,dis,0.01) #t = np.arange(0,dis,0.1) /dis #t = np.linspace(0,1,10)
+        t = np.arange(0,dis,0.001) #t = np.arange(0,dis,0.1) /dis #t = np.linspace(0,1,10)
         x = p0[0] + (p1[0]-p0[0])*(t/dis)
         y = p0[1] + (p1[1]-p0[1])*(t/dis)
         #if w>0:
@@ -26,13 +26,13 @@ def drawEdgePC(pl,nodes_pc,u,v,w):
         #print('point end', points[-1,:])
         pointsSplice = pv.Spline(points)
         # Create a tube around the spline with a specified radius
-        tube = pointsSplice.tube(radius=0.01)  # Adjust the tube radius here
+        tube = pointsSplice.tube(radius=0.0006)  # Adjust the tube radius here
         # Add the tube to the plot
         print('w',u,v,w,100+int(100*w))
         pl.add_mesh(tube, color=colors[100+int(100*w)])#, color='blue', label='Edge')
         ## Calculate the direction vector for the arrow
         vec = (points[-2,:] - points[-3,:])
-        direction = 0.001*(vec)/np.sum(vec*vec)
+        direction = 0.00001*(vec)/np.sum(vec*vec)
         ## Create an arrow at the end point, pointing along the direction
         arrow = pv.Arrow(start=points[-1,:]-direction, direction=direction, tip_length=0.6, tip_radius=0.2,scale='auto')  # Adjust scale for arrow size
         # Add the arrow to the plot
@@ -51,21 +51,25 @@ Z = df['z'].values
 N=len(X)
 df['network_number'] = pd.factorize(df['Network'])[0]
 point_cloud = np.float64([X,Y,Z]).T
-point_cloud = point_cloud/100. #point_cloud.max()
+point_cloud = point_cloud/1000. #point_cloud.max()
 #point_cloud[:100,:]
 
 
 net = pd.read_csv('JijAve_betaNorm.csv',header=[0],index_col=0).values
 absMax = np.max(np.abs(net))
 
-plt.figure()
-plt.imshow(net,cmap='seismic',vmin=-absMax,vmax=absMax)
+#plt.figure()
+#plt.imshow(net,cmap='seismic',vmin=-absMax,vmax=absMax)
+
+
+nodes = point_cloud.T #np.array([pos[v] for v in G]).T
+nodes_pc = np.vstack([nodes,np.zeros(N)]).T
 
 
 # PyVista Visualization
 pdata = pv.PolyData(point_cloud)
 pdata['orig_sphere'] = np.float64(df['network_number'])#np.random.random(N)
-sphere = pv.Sphere(radius=0.02)
+sphere = pv.Sphere(radius=0.003)
 
 # Apply glyphs to the point cloud
 pc = pdata.glyph(scale=False, geom=sphere, orient=False)
@@ -74,33 +78,30 @@ pc = pdata.glyph(scale=False, geom=sphere, orient=False)
 pl = pv.Plotter()
 _ = pl.add_mesh(
     pc,
-    cmap='tab10',
+    cmap='tab20',
     smooth_shading=True,
-    show_scalar_bar=True,
+    show_scalar_bar=False,
 )
+pl.export_gltf('nodes.gltf', inline_data=True)
+pl.export_gltf('nodes.glb', inline_data=True)
+#_ = pl.show_grid()
 
-_ = pl.show_grid()
-
-nodes = point_cloud.T #np.array([pos[v] for v in G]).T
-nodes_pc = np.vstack([nodes,np.zeros(N)]).T
-
-
-
-for i in range(10):
+for i in range(N):
+    pl = pv.Plotter()
     for j in range(N):
         w = net[i,j]
         if np.abs(w) > 0.2:
             print('w',w)
             drawEdgePC(pl,nodes_pc,j,i,w)
-    print('inedges_node_{:03n}'.format(i) +'.glb')
-    pl.export_gltf('inedges_node_{:03n}'.format(i) +'.glb',inline_data=True)
-
-pl.show()
+    #print('inedges_node_{:03n}'.format(i) +'.glb')
+    pl.export_gltf('inedges_node_{:03n}'.format(i) +'.gltf', inline_data=True)
+    pl.export_gltf('inedges_node_{:03n}'.format(i) +'.glb', inline_data=True)
+    pl.show()
 
 #pl.export_gltf('brainDelta'+ str(1/lambdas[indx] )+'.glb',inline_data=True)  
 #print('brainDelta'+ str(1/lambdas[indx] )+'.glb')
 
-fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
-ax.scatter(X,Y,Z,c=df['network_number'],cmap='tab10')
-plt.show()
+#fig = plt.figure()
+#ax = fig.add_subplot(projection='3d')
+#ax.scatter(X,Y,Z,c=df['network_number'],cmap='tab10')
+#plt.show()
